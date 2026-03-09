@@ -1,7 +1,7 @@
 import { useState, useEffect, memo } from "react";
 import { NoveltyChart } from "./components/NoveltyChart";
 import { getNoveltyAtDate, ZERO_DATE } from "./engine/timewaveEngine";
-import { Clock, Info, Calendar, Activity, Zap } from "lucide-react";
+import { Clock, Info, Calendar, Activity, Zap, Sun, Moon } from "lucide-react";
 import { AboutModal } from "./components/AboutModal";
 
 const PRESETS = [
@@ -49,6 +49,23 @@ function App() {
   const [now, setNow] = useState(new Date());
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [hoveredNovelty, setHoveredNovelty] = useState<number | null>(null);
+  const [theme, setTheme] = useState<"dark" | "light">(() => {
+    return (localStorage.getItem("theme") as "dark" | "light") || "dark";
+  });
+
+  const toggleTheme = () => {
+    const newTheme = theme === "dark" ? "light" : "dark";
+    setTheme(newTheme);
+    localStorage.setItem("theme", newTheme);
+  };
+
+  useEffect(() => {
+    if (theme === "light") {
+      document.body.classList.add("light-theme");
+    } else {
+      document.body.classList.remove("light-theme");
+    }
+  }, [theme]);
 
   let startTimeMs: number;
   let endTimeMs: number;
@@ -79,15 +96,20 @@ function App() {
           <h1 className="text-3xl font-black tracking-tight">
             TIME WAVE <span className="accent-blue">ZERO</span>
           </h1>
-          <p
-            className="text-xs font-bold uppercase tracking-widest color-grey"
-            style={{ color: "#555" }}
-          >
+          <p className="text-xs font-bold uppercase tracking-widest text-very-muted">
             Novelty Theory Explorer
           </p>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+          <button
+            className="theme-toggle"
+            onClick={toggleTheme}
+            aria-label="Toggle Theme"
+          >
+            {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
+          </button>
+
           <button className="btn-learn" onClick={() => setIsAboutOpen(true)}>
             What is this?
           </button>
@@ -107,9 +129,8 @@ function App() {
         <section className="sidebar custom-scrollbar">
           <div className="glass">
             <h3
-              className="text-xs uppercase tracking-widest color-grey"
+              className="text-xs uppercase tracking-widest text-muted"
               style={{
-                color: "#888",
                 marginBottom: "16px",
                 display: "flex",
                 alignItems: "center",
@@ -171,9 +192,8 @@ function App() {
 
           <div className="glass novelty-display">
             <h3
-              className="text-xs uppercase tracking-widest color-grey"
+              className="text-xs uppercase tracking-widest text-muted"
               style={{
-                color: "#888",
                 marginBottom: "8px",
                 display: "flex",
                 alignItems: "center",
@@ -184,15 +204,18 @@ function App() {
             </h3>
             <div
               className="novelty-value"
-              style={{ color: hoveredNovelty !== null ? "#00f2ff" : "inherit" }}
+              style={{
+                color:
+                  hoveredNovelty !== null ? "var(--accent-blue)" : "inherit",
+              }}
             >
               {hoveredNovelty !== null
                 ? hoveredNovelty.toFixed(6)
                 : currentNovelty.toFixed(6)}
             </div>
             <p
-              className="text-xs color-dark-grey"
-              style={{ color: "#444", lineHeight: "1.4" }}
+              className="text-xs text-very-muted"
+              style={{ lineHeight: "1.4" }}
             >
               Higher values indicate patterns of decreasing novelty. Zero
               represents the "Teleological Attractor Point".
@@ -205,7 +228,7 @@ function App() {
           >
             <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
               <Info size={16} className="accent-magenta" />
-              <p className="text-xs color-grey" style={{ color: "#888" }}>
+              <p className="text-xs text-muted">
                 Wave converges to zero on Dec 21, 2012.
               </p>
             </div>
@@ -224,6 +247,7 @@ function App() {
               startTime={startTimeMs}
               endTime={endTimeMs}
               onHoverValue={setHoveredNovelty}
+              theme={theme}
             />
           </div>
 
@@ -244,7 +268,7 @@ function App() {
               />
               <div>
                 <h4 className="text-xs font-bold">Mathematical Fractal</h4>
-                <p className="text-xs color-grey" style={{ marginTop: "4px" }}>
+                <p className="text-xs text-muted" style={{ marginTop: "4px" }}>
                   Based on Peter Meyer's formalization. Summation across 64
                   <sup>2</sup>.{" "}
                   <button
@@ -253,7 +277,7 @@ function App() {
                       background: "none",
                       border: "none",
                       padding: 0,
-                      color: "var(--accent-blue, #00f2ff)",
+                      color: "var(--accent-blue)",
                       textDecoration: "underline",
                       cursor: "pointer",
                       fontSize: "inherit",
@@ -277,11 +301,11 @@ function App() {
               <Zap
                 size={20}
                 className="accent-magenta"
-                style={{ transform: "rotate(180deg)", marginTop: "2px" }}
+                style={{ transform: "rotate(180deg)", marginTop: "12px" }}
               />
               <div>
                 <h4 className="text-xs font-bold">Static Visualization</h4>
-                <p className="text-xs color-grey" style={{ marginTop: "4px" }}>
+                <p className="text-xs text-muted" style={{ marginTop: "4px" }}>
                   Fixed time windows for historical trend analysis.
                 </p>
               </div>

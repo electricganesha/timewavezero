@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useCallback } from "react";
+import React, { useEffect, useRef, useCallback, useMemo } from "react";
 import { t, ZERO_DATE } from "../engine/timewaveEngine";
 
 const createDate = (year: number, month: number, day: number): number => {
@@ -74,15 +74,40 @@ interface NoveltyChartProps {
   startTime: number;
   endTime: number;
   onHoverValue?: (val: number | null) => void;
+  theme: "dark" | "light";
 }
 
 const NoveltyChartComponent: React.FC<NoveltyChartProps> = ({
   startTime,
   endTime,
   onHoverValue,
+  theme,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Theme-aware color configuration
+  const colors = useMemo(
+    () => ({
+      grid: theme === "dark" ? "#1a1a1a" : "#e5e5e5",
+      wave: theme === "dark" ? "#00f2ff" : "#007aff",
+      waveGlow: theme === "dark" ? "#00f2ff55" : "transparent",
+      eventLine:
+        theme === "dark" ? "rgba(255, 0, 251, 0.36)" : "rgba(209, 0, 195, 0.4)",
+      eventLabel: theme === "dark" ? "hotpink" : "#d100c3",
+      marker: theme === "dark" ? "#ffffff" : "#000000",
+      markerLine: theme === "dark" ? "#ffffff22" : "#00000022",
+      tooltipBg:
+        theme === "dark"
+          ? "rgba(10, 10, 10, 0.9)"
+          : "rgba(255, 255, 255, 0.95)",
+      tooltipBorder: theme === "dark" ? "#333" : "#ddd",
+      tooltipText: theme === "dark" ? "#fff" : "#1d1d1f",
+      labelMuted: theme === "dark" ? "#444" : "#999",
+      metaText: theme === "dark" ? "#333" : "#bbb",
+    }),
+    [theme],
+  );
 
   const [mousePos, setMousePos] = React.useState<{
     x: number;
@@ -135,7 +160,7 @@ const NoveltyChartComponent: React.FC<NoveltyChartProps> = ({
     const scaleY = maxY > 0 ? chartHeight / maxY : 1;
 
     // Grid
-    ctx.strokeStyle = "#1a1a1a";
+    ctx.strokeStyle = colors.grid;
     ctx.lineWidth = 1;
     ctx.beginPath();
     for (let i = 0; i <= 5; i++) {
@@ -146,9 +171,9 @@ const NoveltyChartComponent: React.FC<NoveltyChartProps> = ({
     ctx.stroke();
 
     // Wave
-    ctx.shadowBlur = 10;
-    ctx.shadowColor = "#00f2ff55";
-    ctx.strokeStyle = "#00f2ff";
+    ctx.shadowBlur = theme === "dark" ? 10 : 0;
+    ctx.shadowColor = colors.waveGlow;
+    ctx.strokeStyle = colors.wave;
     ctx.lineWidth = 2;
     ctx.lineJoin = "round";
     ctx.beginPath();
@@ -169,7 +194,7 @@ const NoveltyChartComponent: React.FC<NoveltyChartProps> = ({
         const xPos = padding + ((ev.time - startTime) / timeRange) * chartWidth;
 
         // Draw vertical dotted line
-        ctx.strokeStyle = "rgba(255, 0, 251, 0.36)";
+        ctx.strokeStyle = colors.eventLine;
         ctx.lineWidth = 1;
         ctx.setLineDash([4, 4]);
         ctx.beginPath();
@@ -183,7 +208,7 @@ const NoveltyChartComponent: React.FC<NoveltyChartProps> = ({
           ctx.save();
           ctx.translate(xPos - 5, padding + 10);
           ctx.rotate(-Math.PI / 2);
-          ctx.fillStyle = "hotpink";
+          ctx.fillStyle = colors.eventLabel;
           ctx.font = "10px JetBrains Mono";
           ctx.textAlign = "right";
           ctx.fillText(ev.label, 0, 0);
@@ -201,7 +226,7 @@ const NoveltyChartComponent: React.FC<NoveltyChartProps> = ({
       const hoveredVal = t(x);
       const hoveredY = height - padding - hoveredVal * scaleY;
 
-      ctx.strokeStyle = "#ffffff22";
+      ctx.strokeStyle = colors.markerLine;
       ctx.setLineDash([5, 5]);
       ctx.beginPath();
       ctx.moveTo(mousePos.x, padding);
@@ -209,9 +234,9 @@ const NoveltyChartComponent: React.FC<NoveltyChartProps> = ({
       ctx.stroke();
       ctx.setLineDash([]);
 
-      ctx.fillStyle = "#ffffff";
-      ctx.shadowBlur = 10;
-      ctx.shadowColor = "#ffffff";
+      ctx.fillStyle = colors.marker;
+      ctx.shadowBlur = theme === "dark" ? 10 : 0;
+      ctx.shadowColor = colors.marker;
       ctx.beginPath();
       ctx.arc(mousePos.x, hoveredY, 4, 0, Math.PI * 2);
       ctx.fill();
@@ -224,18 +249,18 @@ const NoveltyChartComponent: React.FC<NoveltyChartProps> = ({
       if (tx + tooltipW > width) tx = mousePos.x - tooltipW - 10;
       if (ty < 10) ty = hoveredY + 20;
 
-      ctx.fillStyle = "rgba(10, 10, 10, 0.9)";
-      ctx.strokeStyle = "#333";
+      ctx.fillStyle = colors.tooltipBg;
+      ctx.strokeStyle = colors.tooltipBorder;
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.roundRect(tx, ty, tooltipW, tooltipH, 8);
       ctx.fill();
       ctx.stroke();
 
-      ctx.fillStyle = "#fff";
+      ctx.fillStyle = colors.tooltipText;
       ctx.font = "bold 10px Inter";
       ctx.fillText(formatTimelineDate(hoveredTime), tx + 10, ty + 20);
-      ctx.fillStyle = "#00f2ff";
+      ctx.fillStyle = colors.wave;
       ctx.font = "12px JetBrains Mono";
       ctx.fillText(`Novelty: ${hoveredVal.toFixed(6)}`, tx + 10, ty + 40);
     }
@@ -249,7 +274,7 @@ const NoveltyChartComponent: React.FC<NoveltyChartProps> = ({
       const x = (ZERO_DATE.getTime() - hoveredTime) / 86400000;
       const hoveredVal = t(x);
 
-      ctx.fillStyle = "#00f2ff";
+      ctx.fillStyle = colors.wave;
       ctx.fillText(
         `NOVELTY INDEX: ${hoveredVal.toFixed(6)}`,
         padding,
@@ -258,14 +283,14 @@ const NoveltyChartComponent: React.FC<NoveltyChartProps> = ({
 
       if (onHoverValue) onHoverValue(hoveredVal);
     } else {
-      ctx.fillStyle = "#444";
+      ctx.fillStyle = colors.labelMuted;
       ctx.fillText("NOVELTY INDEX", padding, padding - 10);
       if (onHoverValue) onHoverValue(null);
     }
 
-    ctx.fillStyle = "#444";
+    ctx.fillStyle = colors.labelMuted;
     ctx.fillText("TIME PROGRESSION", padding, height - padding + 15);
-  }, [startTime, endTime, mousePos, onHoverValue]);
+  }, [startTime, endTime, mousePos, onHoverValue, colors, theme]);
 
   const handleMouseMove = (e: React.MouseEvent) => {
     const rect = canvasRef.current?.getBoundingClientRect();
@@ -294,7 +319,7 @@ const NoveltyChartComponent: React.FC<NoveltyChartProps> = ({
       style={{
         position: "absolute",
         inset: 0,
-        backgroundColor: "#050505",
+        backgroundColor: "var(--bg-color)",
         overflow: "hidden",
       }}
     >
@@ -312,7 +337,7 @@ const NoveltyChartComponent: React.FC<NoveltyChartProps> = ({
           pointerEvents: "none",
           fontSize: "10px",
           fontFamily: "JetBrains Mono",
-          color: "#333",
+          color: "var(--meta-text, var(--text-very-muted))",
           display: "flex",
           flexDirection: "column",
           alignItems: "flex-end",
