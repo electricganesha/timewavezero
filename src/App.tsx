@@ -5,40 +5,61 @@ import { Clock, Info, Calendar, Activity, Zap } from "lucide-react";
 import { AboutModal } from "./components/AboutModal";
 
 const PRESETS = [
+  { label: "Big Bang (22B Years)", days: 22e9 * 365.25, endOffset: -365 * 14 },
+  { label: "Earth History (7B Years)", days: 7e9 * 365.25, endOffset: 0 },
   { label: "Long Term (10k Years)", days: 3652500, endOffset: 0 },
   { label: "Human History (2k Years)", days: 730500, endOffset: 0 },
-  { label: "The 2012 Singularity", days: 200, endOffset: 100 },
   { label: "Last 100 Years", days: 36525, endOffset: 0 },
-  { label: "Recent Trend (30 Days)", days: 30, endOffset: 0 },
+  { label: "The 2012 Singularity", days: 547, endOffset: -192 },
   { label: "The Future (Post-2012)", days: 100, endOffset: -150 },
 ];
 
 const MemoizedNoveltyChart = memo(NoveltyChart);
 
+const toISO = (ms: number) => {
+  try {
+    const d = new Date(ms);
+    if (isNaN(d.getTime())) return "";
+    // Date picker only handles positive years well
+    if (d.getUTCFullYear() < 0 || d.getUTCFullYear() > 9999) return "";
+    return d.toISOString().split("T")[0];
+  } catch {
+    return "";
+  }
+};
+
+const getPresetRange = (preset: (typeof PRESETS)[0]) => {
+  const msEnd = ZERO_DATE.getTime() - preset.endOffset * 24 * 60 * 60 * 1000;
+  const msStart = msEnd - preset.days * 24 * 60 * 60 * 1000;
+  return {
+    start: toISO(msStart),
+    end: toISO(msEnd),
+  };
+};
+
 function App() {
   const [currentPreset, setCurrentPreset] = useState<
     (typeof PRESETS)[0] | "custom"
-  >(PRESETS[2]);
-  const [customRange, setCustomRange] = useState({
-    start: "1900-01-01",
-    end: "2012-12-21",
-  });
+  >(PRESETS[4]);
+
+  const [customRange, setCustomRange] = useState(() =>
+    getPresetRange(PRESETS[4] as (typeof PRESETS)[0]),
+  );
+
   const [now, setNow] = useState(new Date());
   const [isAboutOpen, setIsAboutOpen] = useState(false);
+  const [hoveredNovelty, setHoveredNovelty] = useState<number | null>(null);
 
-  let startDate: Date;
-  let endDate: Date;
+  let startTimeMs: number;
+  let endTimeMs: number;
 
   if (currentPreset === "custom") {
-    startDate = new Date(customRange.start);
-    endDate = new Date(customRange.end);
+    startTimeMs = new Date(customRange.start).getTime();
+    endTimeMs = new Date(customRange.end).getTime();
   } else {
-    endDate = new Date(
-      ZERO_DATE.getTime() - currentPreset.endOffset * 24 * 60 * 60 * 1000,
-    );
-    startDate = new Date(
-      endDate.getTime() - currentPreset.days * 24 * 60 * 60 * 1000,
-    );
+    endTimeMs =
+      ZERO_DATE.getTime() - currentPreset.endOffset * 24 * 60 * 60 * 1000;
+    startTimeMs = endTimeMs - currentPreset.days * 24 * 60 * 60 * 1000;
   }
 
   const currentNovelty = getNoveltyAtDate(now);
@@ -103,7 +124,10 @@ function App() {
               {PRESETS.map((p) => (
                 <button
                   key={p.label}
-                  onClick={() => setCurrentPreset(p)}
+                  onClick={() => {
+                    setCurrentPreset(p);
+                    setCustomRange(getPresetRange(p));
+                  }}
                   className={`preset-btn ${typeof currentPreset !== "string" && currentPreset.label === p.label ? "active" : ""}`}
                 >
                   {p.label}
@@ -158,7 +182,14 @@ function App() {
             >
               <Activity size={12} /> Novelty Index
             </h3>
-            <div className="novelty-value">{currentNovelty.toFixed(6)}</div>
+            <div
+              className="novelty-value"
+              style={{ color: hoveredNovelty !== null ? "#00f2ff" : "inherit" }}
+            >
+              {hoveredNovelty !== null
+                ? hoveredNovelty.toFixed(6)
+                : currentNovelty.toFixed(6)}
+            </div>
             <p
               className="text-xs color-dark-grey"
               style={{ color: "#444", lineHeight: "1.4" }}
@@ -172,7 +203,7 @@ function App() {
             className="glass"
             style={{ marginTop: "auto", opacity: 0.6, padding: "16px" }}
           >
-            <div style={{ display: "flex", gap: "12px" }}>
+            <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
               <Info size={16} className="accent-magenta" />
               <p className="text-xs color-grey" style={{ color: "#888" }}>
                 Wave converges to zero on Dec 21, 2012.
@@ -190,32 +221,63 @@ function App() {
                   ? `custom-${customRange.start}-${customRange.end}`
                   : currentPreset.label
               }
-              startTime={startDate.getTime()}
-              endTime={endDate.getTime()}
+              startTime={startTimeMs}
+              endTime={endTimeMs}
+              onHoverValue={setHoveredNovelty}
             />
           </div>
 
           <div className="info-cards">
             <div
               className="glass"
-              style={{ display: "flex", gap: "12px", padding: "16px" }}
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                gap: "12px",
+                padding: "16px",
+              }}
             >
-              <Zap size={20} className="accent-blue" />
+              <Zap
+                size={20}
+                className="accent-blue"
+                style={{ marginTop: "12px" }}
+              />
               <div>
                 <h4 className="text-xs font-bold">Mathematical Fractal</h4>
                 <p className="text-xs color-grey" style={{ marginTop: "4px" }}>
-                  Based on Peter Meyer's formalization. Summation across 64^i.
+                  Based on Peter Meyer's formalization. Summation across 64
+                  <sup>2</sup>.{" "}
+                  <button
+                    onClick={() => setIsAboutOpen(true)}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      padding: 0,
+                      color: "var(--accent-blue, #00f2ff)",
+                      textDecoration: "underline",
+                      cursor: "pointer",
+                      fontSize: "inherit",
+                      fontFamily: "inherit",
+                    }}
+                  >
+                    Learn more
+                  </button>
                 </p>
               </div>
             </div>
             <div
               className="glass"
-              style={{ display: "flex", gap: "12px", padding: "16px" }}
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                gap: "12px",
+                padding: "16px",
+              }}
             >
               <Zap
                 size={20}
                 className="accent-magenta"
-                style={{ transform: "rotate(180deg)" }}
+                style={{ transform: "rotate(180deg)", marginTop: "2px" }}
               />
               <div>
                 <h4 className="text-xs font-bold">Static Visualization</h4>

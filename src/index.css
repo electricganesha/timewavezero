@@ -20,6 +20,15 @@ body,
   font-family: "Inter", sans-serif;
 }
 
+a {
+  color: #ff00f2;
+}
+
+a:hover {
+  color: rgba(255, 0, 136, 0.677);
+  transition: 150ms ease-in;
+}
+
 /* Layout Structure */
 .app-container {
   display: flex;
@@ -73,9 +82,8 @@ body,
 
 .info-cards {
   display: grid;
-  grid-template-cols: 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 16px;
-  height: 96px;
   flex-shrink: 0;
 }
 
@@ -237,8 +245,8 @@ body,
 
 .modal-content {
   width: 90%;
-  max-width: 600px;
-  max-height: 80vh;
+  max-width: 1080px;
+  max-height: 90vh;
   display: flex;
   flex-direction: column;
   position: relative;
@@ -344,4 +352,62 @@ body,
 .btn-learn:hover {
   background: rgba(0, 242, 255, 0.1);
   border-color: #00f2ff;
+}
+
+/* Mobile Responsive */
+@media (max-width: 900px) {
+  html,
+  body,
+  #root {
+    overflow-y: auto;
+    position: relative;
+    height: auto;
+    min-height: 100vh;
+  }
+
+  .app-container {
+    padding: 16px;
+    height: auto;
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  .header > div:last-child {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .main-content {
+    flex-direction: column-reverse;
+    overflow: visible;
+  }
+
+  .sidebar {
+    width: 100%;
+    overflow: visible;
+  }
+
+  .chart-section {
+    min-height: 60vh;
+  }
+
+  .info-cards {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .modal-content {
+    width: 95%;
+  }
+
+  .modal-header,
+  .modal-body {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
 }

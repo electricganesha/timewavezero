@@ -58,6 +58,7 @@ export function f(x: number): number {
  * x = time in days prior to the zero date
  */
 export function t(x: number): number {
+  if (x <= 0) return 0; // Clamped at zero point (Dec 21, 2012)
   return f(x) / Math.pow(SCALING_FACTOR, 3);
 }
 
