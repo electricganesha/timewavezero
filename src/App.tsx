@@ -1,8 +1,21 @@
 import { useState, useEffect, memo } from "react";
 import { NoveltyChart } from "./components/NoveltyChart";
+import { NoveltyChart3D } from "./components/NoveltyChart3D";
 import { getNoveltyAtDate, ZERO_DATE } from "./engine/timewaveEngine";
-import { Clock, Info, Calendar, Activity, Zap, Sun, Moon } from "lucide-react";
+import {
+  Clock,
+  Info,
+  Calendar,
+  Activity,
+  Zap,
+  Sun,
+  Moon,
+  Layers,
+  Volume2,
+  VolumeX,
+} from "lucide-react";
 import { AboutModal } from "./components/AboutModal";
+import { useNoveltyAudio } from "./hooks/useNoveltyAudio";
 
 const PRESETS = [
   { label: "Big Bang (22B Years)", days: 22e9 * 365.25, endOffset: -365 * 14 },
@@ -52,6 +65,12 @@ function App() {
   const [theme, setTheme] = useState<"dark" | "light">(() => {
     return (localStorage.getItem("theme") as "dark" | "light") || "dark";
   });
+  const [viewMode, setViewMode] = useState<"2D" | "3D">("2D");
+
+  const currentNovelty = getNoveltyAtDate(now);
+
+  const { isPlaying: isAudioPlaying, togglePlayback: toggleAudio } =
+    useNoveltyAudio(hoveredNovelty !== null ? hoveredNovelty : currentNovelty);
 
   const toggleTheme = () => {
     const newTheme = theme === "dark" ? "light" : "dark";
@@ -78,8 +97,6 @@ function App() {
       ZERO_DATE.getTime() - currentPreset.endOffset * 24 * 60 * 60 * 1000;
     startTimeMs = endTimeMs - currentPreset.days * 24 * 60 * 60 * 1000;
   }
-
-  const currentNovelty = getNoveltyAtDate(now);
 
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 1000);
@@ -108,6 +125,26 @@ function App() {
             aria-label="Toggle Theme"
           >
             {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
+          </button>
+
+          <button
+            className="theme-toggle"
+            onClick={() => setViewMode((v) => (v === "2D" ? "3D" : "2D"))}
+            aria-label="Toggle 3D"
+            style={{
+              color: viewMode === "3D" ? "var(--accent-magenta)" : "inherit",
+            }}
+          >
+            <Layers size={20} />
+          </button>
+
+          <button
+            className="theme-toggle"
+            onClick={toggleAudio}
+            aria-label="Toggle Audio"
+            style={{ color: isAudioPlaying ? "var(--accent-blue)" : "inherit" }}
+          >
+            {isAudioPlaying ? <Volume2 size={20} /> : <VolumeX size={20} />}
           </button>
 
           <button className="btn-learn" onClick={() => setIsAboutOpen(true)}>
@@ -229,7 +266,7 @@ function App() {
             <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
               <Info size={16} className="accent-magenta" />
               <p className="text-xs text-muted">
-                Wave converges to zero on Dec 21, 2012.
+                Wave terminates and history ends Dec 21, 2012.
               </p>
             </div>
           </div>
@@ -238,17 +275,31 @@ function App() {
         {/* Chart View */}
         <section className="chart-section">
           <div className="chart-wrapper">
-            <MemoizedNoveltyChart
-              key={
-                typeof currentPreset === "string"
-                  ? `custom-${customRange.start}-${customRange.end}`
-                  : currentPreset.label
-              }
-              startTime={startTimeMs}
-              endTime={endTimeMs}
-              onHoverValue={setHoveredNovelty}
-              theme={theme}
-            />
+            {viewMode === "2D" ? (
+              <MemoizedNoveltyChart
+                key={
+                  typeof currentPreset === "string"
+                    ? `custom-${customRange.start}-${customRange.end}`
+                    : currentPreset.label
+                }
+                startTime={startTimeMs}
+                endTime={endTimeMs}
+                onHoverValue={setHoveredNovelty}
+                theme={theme}
+              />
+            ) : (
+              <NoveltyChart3D
+                key={
+                  typeof currentPreset === "string"
+                    ? `custom-3d-${customRange.start}-${customRange.end}`
+                    : `3d-${currentPreset.label}`
+                }
+                startTime={startTimeMs}
+                endTime={endTimeMs}
+                theme={theme}
+                onHoverValue={setHoveredNovelty}
+              />
+            )}
           </div>
 
           <div className="info-cards">
@@ -304,9 +355,10 @@ function App() {
                 style={{ transform: "rotate(180deg)", marginTop: "12px" }}
               />
               <div>
-                <h4 className="text-xs font-bold">Static Visualization</h4>
+                <h4 className="text-xs font-bold">Terminal Singularity</h4>
                 <p className="text-xs text-muted" style={{ marginTop: "4px" }}>
-                  Fixed time windows for historical trend analysis.
+                  The zero point represents the absolute end of the fractal
+                  wave.
                 </p>
               </div>
             </div>

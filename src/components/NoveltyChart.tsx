@@ -1,46 +1,6 @@
 import React, { useEffect, useRef, useCallback, useMemo } from "react";
 import { t, ZERO_DATE } from "../engine/timewaveEngine";
-
-const createDate = (year: number, month: number, day: number): number => {
-  const d = new Date(Date.UTC(year, month - 1, day));
-  d.setUTCFullYear(year);
-  return d.getTime();
-};
-
-const YEAR_MS = 31556952000;
-
-const MAJOR_EVENTS = [
-  { label: "Big Bang", time: -22e9 * YEAR_MS },
-  { label: "Accretion of Moon", time: -7e9 * YEAR_MS },
-  { label: "Cambrian Explosion", time: -541e6 * YEAR_MS },
-  { label: "KT Extinction (Dinosaurs)", time: -65e6 * YEAR_MS },
-  { label: "Homo Sapiens Ancestors", time: -10e6 * YEAR_MS },
-  { label: "Human behaviors/tech", time: -50000 * YEAR_MS },
-  { label: "End of glaciers", time: -17000 * YEAR_MS },
-  { label: "Building of Great Pyramid", time: createDate(-2790, 1, 1) },
-  { label: "Golden Age of Greece / Buddha", time: createDate(-500, 1, 1) },
-  { label: "Roman Empire Founded", time: createDate(-27, 1, 16) },
-  { label: "Crucifixion of Christ", time: createDate(33, 4, 3) },
-  { label: "Fall of Han Dynasty", time: createDate(220, 1, 1) },
-  { label: "Fall of Roman Empire", time: createDate(476, 9, 4) },
-  { label: "Birth of Prophet Mohammed", time: createDate(570, 1, 1) },
-  { label: "First Crusade", time: createDate(1095, 11, 27) },
-  { label: "Black Death Peak", time: createDate(1347, 6, 1) },
-  { label: "Discovery of New World", time: createDate(1492, 10, 12) },
-  { label: "American Revolution", time: createDate(1776, 7, 4) },
-  { label: "French Revolution", time: createDate(1789, 7, 14) },
-  { label: "WWI Begins", time: createDate(1914, 7, 28) },
-  { label: "Stock Exchange Crash", time: createDate(1929, 10, 29) },
-  { label: "WWII Begins", time: createDate(1939, 9, 1) },
-  { label: "Hiroshima", time: createDate(1945, 8, 6) },
-  { label: "DNA Double Helix", time: createDate(1953, 4, 25) },
-  { label: "The 1960s Turning Point", time: createDate(1960, 1, 1) },
-  { label: "Moon Landing", time: createDate(1969, 7, 20) },
-  { label: "Murder of Anwar Sadat", time: createDate(1981, 10, 6) },
-  { label: "Invention of WWW", time: createDate(1989, 3, 12) },
-  { label: "9/11 Attacks", time: createDate(2001, 9, 11) },
-  { label: "Timewave Zero Point", time: createDate(2012, 12, 21) },
-];
+import { MAJOR_EVENTS, YEAR_MS } from "../engine/timewaveConstants";
 
 const formatTimelineDate = (timeMs: number): string => {
   const yearsOffset = timeMs / YEAR_MS;
@@ -89,22 +49,22 @@ const NoveltyChartComponent: React.FC<NoveltyChartProps> = ({
   // Theme-aware color configuration
   const colors = useMemo(
     () => ({
-      grid: theme === "dark" ? "#1a1a1a" : "#e5e5e5",
-      wave: theme === "dark" ? "#00f2ff" : "#007aff",
+      grid: theme === "dark" ? "#1a1a1a" : "#f0f0f2",
+      wave: theme === "dark" ? "#00f2ff" : "#0066cc",
       waveGlow: theme === "dark" ? "#00f2ff55" : "transparent",
       eventLine:
-        theme === "dark" ? "rgba(255, 0, 251, 0.36)" : "rgba(209, 0, 195, 0.4)",
-      eventLabel: theme === "dark" ? "hotpink" : "#d100c3",
+        theme === "dark" ? "rgba(255, 0, 251, 0.36)" : "rgba(191, 0, 176, 0.25)",
+      eventLabel: theme === "dark" ? "hotpink" : "#bf00b0",
       marker: theme === "dark" ? "#ffffff" : "#000000",
       markerLine: theme === "dark" ? "#ffffff22" : "#00000022",
       tooltipBg:
         theme === "dark"
           ? "rgba(10, 10, 10, 0.9)"
-          : "rgba(255, 255, 255, 0.95)",
+          : "rgba(255, 255, 255, 0.98)",
       tooltipBorder: theme === "dark" ? "#333" : "#ddd",
-      tooltipText: theme === "dark" ? "#fff" : "#1d1d1f",
-      labelMuted: theme === "dark" ? "#444" : "#999",
-      metaText: theme === "dark" ? "#333" : "#bbb",
+      tooltipText: theme === "dark" ? "#fff" : "#1a1a1c",
+      labelMuted: theme === "dark" ? "#444" : "#88888b",
+      metaText: theme === "dark" ? "#333" : "#88888b",
     }),
     [theme],
   );
@@ -347,9 +307,9 @@ const NoveltyChartComponent: React.FC<NoveltyChartProps> = ({
         }}
       >
         <span>
-          FRACTAL_SCALE: 64<sup>i</sup>
+          FRACTAL_SCALE: 64<sup>{Math.max(1, Math.round(Math.log((endTime - startTime) / 86400000 / 6) / Math.log(64)))}</sup>
         </span>
-        <span>ZERO_POINT: 2012-12-21</span>
+        <span>TERMINAL_SINGULARITY: 2012-12-21</span>
       </div>
     </div>
   );

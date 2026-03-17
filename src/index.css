@@ -17,18 +17,18 @@
 }
 
 .light-theme {
-  --bg-color: #f5f5f7;
-  --text-color: #1d1d1f;
-  --text-muted: #666666;
-  --text-very-muted: #999999;
-  --accent-blue: #007aff; /* Slightly deeper blue for light mode */
-  --accent-magenta: #d100c3; /* Slightly deeper magenta for light mode */
-  --glass-bg: rgba(255, 255, 255, 0.7);
-  --glass-border: rgba(0, 0, 0, 0.1);
-  --input-bg: rgba(0, 0, 0, 0.03);
-  --input-border: rgba(0, 0, 0, 0.1);
-  --chart-bg: rgba(255, 255, 255, 0.5);
-  --scrollbar-thumb: #cccccc;
+  --bg-color: #ffffff;
+  --text-color: #1a1a1c;
+  --text-muted: #555557;
+  --text-very-muted: #88888b;
+  --accent-blue: #0066cc; /* More traditional, deep blue for better light visibility */
+  --accent-magenta: #bf00b0; /* Deeper magenta for high contrast */
+  --glass-bg: rgba(245, 245, 247, 0.85);
+  --glass-border: rgba(0, 0, 0, 0.08);
+  --input-bg: rgba(0, 0, 0, 0.04);
+  --input-border: rgba(0, 0, 0, 0.12);
+  --chart-bg: #f5f5f7;
+  --scrollbar-thumb: #bbbbbc;
   --modal-bg: #ffffff;
 }
 
@@ -43,7 +43,7 @@ body,
   width: 100vw;
   margin: 0;
   padding: 0;
-  overflow: hidden;
+  overflow: hidden !important;
   position: fixed;
   top: 0;
   left: 0;
@@ -53,6 +53,7 @@ body,
   transition:
     background-color 0.3s ease,
     color 0.3s ease;
+  overscroll-behavior: none;
 }
 
 a {
@@ -113,6 +114,19 @@ a:hover {
   border-radius: 16px;
   background: var(--chart-bg);
   border: 1px solid var(--glass-border);
+  overscroll-behavior: none;
+  touch-action: none;
+}
+
+.chart-wrapper * {
+  overscroll-behavior: none;
+  touch-action: none;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 10+ */
+}
+
+.chart-wrapper *::-webkit-scrollbar {
+  display: none; /* WebKit */
 }
 
 .info-cards {

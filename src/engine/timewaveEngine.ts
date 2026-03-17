@@ -58,14 +58,14 @@ export function f(x: number): number {
  * x = time in days prior to the zero date
  */
 export function t(x: number): number {
-  if (x <= 0) return 0; // Clamped at zero point (Dec 21, 2012)
+  if (x <= 0) return 0; // Strictly clamped at or after the zero point
   return f(x) / Math.pow(SCALING_FACTOR, 3);
 }
 
 /**
- * Zero date: 6:00 AM on December 21, 2012
+ * Zero date: 2012-12-21 (Midnight UTC)
  */
-export const ZERO_DATE = new Date("2012-12-21T06:00:00Z");
+export const ZERO_DATE = new Date(Date.UTC(2012, 11, 21));
 
 /**
  * Converts a date to "days before zero date" (x)
