@@ -34,14 +34,22 @@ interface NoveltyChartProps {
   startTime: number;
   endTime: number;
   onHoverValue?: (val: number | null) => void;
+  onClickDate?: (date: Date) => void;
   theme: "dark" | "light";
+  isArchaeologistActive?: boolean;
+  archaeologistDate?: Date;
+  echoDates?: Date[];
 }
 
 const NoveltyChartComponent: React.FC<NoveltyChartProps> = ({
   startTime,
   endTime,
   onHoverValue,
+  onClickDate,
   theme,
+  isArchaeologistActive,
+  archaeologistDate,
+  echoDates,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -178,12 +186,12 @@ const NoveltyChartComponent: React.FC<NoveltyChartProps> = ({
       }
     });
 
-    // Vertical marker and tooltip
+    // Vertical marker and tooltip (Hover)
     if (mousePos && mousePos.x >= padding && mousePos.x <= width - padding) {
       const xRelative = (mousePos.x - padding) / chartWidth;
       const hoveredTime = startTime + xRelative * timeRange;
-      const x = (ZERO_DATE.getTime() - hoveredTime) / 86400000;
-      const hoveredVal = t(x);
+      const xVal = (ZERO_DATE.getTime() - hoveredTime) / 86400000;
+      const hoveredVal = t(xVal);
       const hoveredY = height - padding - hoveredVal * scaleY;
 
       ctx.strokeStyle = colors.markerLine;
@@ -223,34 +231,106 @@ const NoveltyChartComponent: React.FC<NoveltyChartProps> = ({
       ctx.fillStyle = colors.wave;
       ctx.font = "12px JetBrains Mono";
       ctx.fillText(`Novelty: ${hoveredVal.toFixed(6)}`, tx + 10, ty + 40);
+
+      if (onHoverValue) onHoverValue(hoveredVal);
+    } else if (onHoverValue) {
+      onHoverValue(null);
+    }
+
+    // Fractal Resonance Visualization (Rhymes)
+    if (isArchaeologistActive && archaeologistDate) {
+      const allPoints = [archaeologistDate, ...(echoDates || [])];
+      const pointPositions: { x: number; y: number; time: number }[] = [];
+
+      allPoints.forEach((date, i) => {
+        const time = date.getTime();
+        if (time >= startTime && time <= endTime) {
+          const xPos = padding + ((time - startTime) / timeRange) * chartWidth;
+          const xVal = (ZERO_DATE.getTime() - time) / 86400000;
+          const val = t(xVal);
+          const yPos = height - padding - val * scaleY;
+          pointPositions.push({ x: xPos, y: yPos, time });
+
+          // Vertical line
+          ctx.strokeStyle = i === 0 ? "#00f2ff" : i === 1 ? "#ff00fb" : "#7000ff";
+          ctx.setLineDash([2, 4]);
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(xPos, padding);
+          ctx.lineTo(xPos, height - padding);
+          ctx.stroke();
+          ctx.setLineDash([]);
+
+          // Glowing dot
+          ctx.shadowBlur = 15;
+          ctx.shadowColor = ctx.strokeStyle;
+          ctx.fillStyle = ctx.strokeStyle;
+          ctx.beginPath();
+          ctx.arc(xPos, yPos, 6, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.shadowBlur = 0;
+
+          // Label
+          ctx.font = "bold 9px JetBrains Mono";
+          ctx.fillText(i === 0 ? "PRIMARY" : `ECHO L${i}`, xPos + 8, yPos - 10);
+        }
+      });
+
+      // Connecting Arcs between points
+      if (pointPositions.length > 1) {
+        ctx.setLineDash([]);
+        for (let i = 0; i < pointPositions.length - 1; i++) {
+          const p1 = pointPositions[i];
+          const p2 = pointPositions[i + 1];
+          
+          ctx.strokeStyle = colors.wave;
+          ctx.lineWidth = 2;
+          ctx.globalAlpha = 0.5;
+          ctx.beginPath();
+          ctx.moveTo(p1.x, p1.y);
+          // Quadratic curve for arc feel
+          const cpX = (p1.x + p2.x) / 2;
+          const cpY = Math.min(p1.y, p2.y) - Math.abs(p1.x - p2.x) * 0.2;
+          ctx.quadraticCurveTo(cpX, cpY, p2.x, p2.y);
+          ctx.stroke();
+          ctx.globalAlpha = 1.0;
+        }
+      }
     }
 
     // Labels
     ctx.font = "10px JetBrains Mono";
-
     if (mousePos && mousePos.x >= padding && mousePos.x <= width - padding) {
       const xRelative = (mousePos.x - padding) / chartWidth;
       const hoveredTime = startTime + xRelative * timeRange;
-      const x = (ZERO_DATE.getTime() - hoveredTime) / 86400000;
-      const hoveredVal = t(x);
-
+      const xVal = (ZERO_DATE.getTime() - hoveredTime) / 86400000;
+      const hoveredVal = t(xVal);
       ctx.fillStyle = colors.wave;
-      ctx.fillText(
-        `NOVELTY INDEX: ${hoveredVal.toFixed(6)}`,
-        padding,
-        padding - 10,
-      );
-
-      if (onHoverValue) onHoverValue(hoveredVal);
+      ctx.fillText(`NOVELTY INDEX: ${hoveredVal.toFixed(6)}`, padding, padding - 10);
     } else {
       ctx.fillStyle = colors.labelMuted;
       ctx.fillText("NOVELTY INDEX", padding, padding - 10);
-      if (onHoverValue) onHoverValue(null);
     }
 
     ctx.fillStyle = colors.labelMuted;
     ctx.fillText("TIME PROGRESSION", padding, height - padding + 15);
-  }, [startTime, endTime, mousePos, onHoverValue, colors, theme]);
+  }, [startTime, endTime, mousePos, onHoverValue, colors, theme, isArchaeologistActive, archaeologistDate, echoDates]);
+
+  const handleCanvasClick = (e: React.MouseEvent) => {
+    if (!onClickDate) return;
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    
+    const x = e.clientX - rect.left;
+    const padding = 40;
+    const chartWidth = rect.width - padding * 2;
+    
+    if (x >= padding && x <= rect.width - padding) {
+      const xRelative = (x - padding) / chartWidth;
+      const clickedTime = startTime + xRelative * (endTime - startTime);
+      onClickDate(new Date(clickedTime));
+    }
+  };
 
   const handleMouseMove = (e: React.MouseEvent) => {
     const rect = canvasRef.current?.getBoundingClientRect();
@@ -266,7 +346,6 @@ const NoveltyChartComponent: React.FC<NoveltyChartProps> = ({
 
   useEffect(() => {
     const update = () => draw();
-    // Simplified resize observation
     const observer = new ResizeObserver(() => requestAnimationFrame(update));
     if (containerRef.current) observer.observe(containerRef.current);
     update();
@@ -288,6 +367,7 @@ const NoveltyChartComponent: React.FC<NoveltyChartProps> = ({
         style={{ display: "block", width: "100%", height: "100%" }}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
+        onClick={handleCanvasClick}
       />
       <div
         style={{

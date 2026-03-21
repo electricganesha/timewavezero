@@ -1,15 +1,25 @@
 import React, { useState } from "react";
-import { X, BookOpen, Calculator, Zap, Info, Binary } from "lucide-react";
+import {
+  X,
+  BookOpen,
+  Calculator,
+  Zap,
+  Info,
+  Binary,
+  Sparkles,
+  MessageSquare,
+  Waves,
+} from "lucide-react";
 
 interface AboutModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-type Tab = "history" | "math" | "credits" | "origins";
+type Tab = "theory" | "origins" | "math" | "features" | "credits";
 
 export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
-  const [activeTab, setActiveTab] = useState<Tab>("history");
+  const [activeTab, setActiveTab] = useState<Tab>("theory");
 
   if (!isOpen) return null;
 
@@ -97,6 +107,30 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
           interconnectedness.
         </p>
       </section>
+
+      <section className="info-section">
+        <h3 className="section-title">
+          <BookOpen size={16} /> Key Concepts
+        </h3>
+        <div className="glass" style={{ padding: "12px", fontSize: "12px" }}>
+          <ul style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            <li>
+              <b>Novelty:</b> Complexity, connectivity, and creative density.
+            </li>
+            <li>
+              <b>Habit:</b> Repetition, entropy, and stasis.
+            </li>
+            <li>
+              <b>Concrescence:</b> The final nexus where all history and
+              information converge.
+            </li>
+            <li>
+              <b>Fractal:</b> A pattern that repeats itself at every scale
+              (self-similarity).
+            </li>
+          </ul>
+        </div>
+      </section>
     </>
   );
 
@@ -167,6 +201,78 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
           >
             Read the full technical paper: "The Mathematics of Timewave Zero"
           </a>
+        </p>
+      </section>
+    </>
+  );
+
+  const renderFeatures = () => (
+    <>
+      <section className="info-section">
+        <h3 className="section-title">
+          <Waves size={16} /> Dual-State Visualization
+        </h3>
+        <p>
+          Experience history through two distinct lenses: a precise 2D Cartesian
+          plot for mathematical analysis and a 3D Logarithmic Vortex for
+          immersive, temporal exploration.
+        </p>
+      </section>
+
+      <section className="info-section">
+        <h3 className="section-title">
+          <Binary size={16} /> Fractal Time Scaling
+        </h3>
+        <p>
+          Navigate the "Concrescence" at any scale. From biological moments to
+          cosmic eras, the Timewave maintains perfect self-similarity across
+          powers of 64, revealing the recursive nature of time.
+        </p>
+      </section>
+
+      <section className="info-section">
+        <h3 className="section-title">
+          <Sparkles size={16} /> Resonance & Rhyme
+        </h3>
+        <p>
+          Discover historical "rhymes" using <b>Fractal Resonance Analysis</b>.
+          Identify points in the deep past that share the same mathematical
+          position as the present, connected by glowing Bifrost Bridges.
+        </p>
+      </section>
+
+      <section className="info-section">
+        <h3 className="section-title">
+          <MessageSquare size={16} /> AI Archaeologist
+        </h3>
+        <p>
+          Consult the <b>Steward of the Noosphere</b> to interpret patterns of
+          novelty and habit. Our AI engine synthesizes cross-era data to reveal
+          archetypal signatures persisting across the fractal wave.
+        </p>
+      </section>
+
+      <section className="info-section">
+        <h3 className="section-title">
+          <Zap size={16} /> Real-time Sonification
+        </h3>
+        <p>
+          Listen to the fluctuations of the Timewave. Historical "Novelty"
+          values are translated into a <b>dynamic audio soundscape</b>,
+          allowing you to hear the frequency of creativity as you navigate
+          history.
+        </p>
+      </section>
+
+      <section className="info-section">
+        <h3 className="section-title">
+          <Info size={16} /> Navigation & Interaction
+        </h3>
+        <p>
+          Master the tools of the Noosphere. Use the <b>2D view</b> for precise
+          analysis or the <b>3D vortex</b> for an immersive journey.{" "}
+          <b>Scroll or drag</b> the timeline to navigate through billions of
+          years of history.
         </p>
       </section>
     </>
@@ -247,6 +353,18 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
           </a>
           .
         </p>
+        <p style={{ marginTop: "12px" }}>
+          Explore the source code and contribute to the project on{" "}
+          <a
+            href="https://github.com/electricganesha/timewavezero"
+            target="_blank"
+            referrerPolicy="no-referrer"
+            style={{ fontWeight: "bold" }}
+          >
+            GitHub
+          </a>
+          .
+        </p>
       </section>
 
       <div
@@ -287,10 +405,16 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
 
         <nav className="modal-tabs">
           <button
-            className={`tab-btn ${activeTab === "history" ? "active" : ""}`}
-            onClick={() => setActiveTab("history")}
+            className={`tab-btn ${activeTab === "theory" ? "active" : ""}`}
+            onClick={() => setActiveTab("theory")}
           >
             Theory
+          </button>
+          <button
+            className={`tab-btn ${activeTab === "origins" ? "active" : ""}`}
+            onClick={() => setActiveTab("origins")}
+          >
+            Origins
           </button>
           <button
             className={`tab-btn ${activeTab === "math" ? "active" : ""}`}
@@ -299,10 +423,10 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
             Mathematics
           </button>
           <button
-            className={`tab-btn ${activeTab === "origins" ? "active" : ""}`}
-            onClick={() => setActiveTab("origins")}
+            className={`tab-btn ${activeTab === "features" ? "active" : ""}`}
+            onClick={() => setActiveTab("features")}
           >
-            Origins
+            The App
           </button>
           <button
             className={`tab-btn ${activeTab === "credits" ? "active" : ""}`}
@@ -314,9 +438,10 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
 
         <div className="modal-body custom-scrollbar">
           <div className="tab-content" key={activeTab}>
-            {activeTab === "history" && renderTheory()}
-            {activeTab === "math" && renderMath()}
+            {activeTab === "theory" && renderTheory()}
             {activeTab === "origins" && renderOrigins()}
+            {activeTab === "math" && renderMath()}
+            {activeTab === "features" && renderFeatures()}
             {activeTab === "credits" && renderCredits()}
           </div>
         </div>

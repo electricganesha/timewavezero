@@ -82,3 +82,33 @@ export function getNoveltyAtDate(date: Date): number {
   const x = dateToX(date);
   return t(x);
 }
+/**
+ * Gets the date of a fractal resonance point.
+ * level 1: 384 * 64 days (~67 years)
+ * level 2: 384 * 64^2 days (~4,306 years)
+ * level 3: 384 * 64^3 days (~275,600 years)
+ */
+export function getFractalResonance(date: Date, level: number = 1): Date {
+  const x = dateToX(date);
+  const cycleDays = 384 * Math.pow(SCALING_FACTOR, level);
+  
+  // The resonance point is simply x + cycleDays (looking back in time)
+  // or x - cycleDays (looking forward, though history ends at 2012)
+  const resonanceX = x + cycleDays;
+  
+  const diffMs = resonanceX * (1000 * 60 * 60 * 24);
+  return new Date(ZERO_DATE.getTime() - diffMs);
+}
+
+/**
+ * Determines if novelty is increasing (slope < 0) or decreasing (slope > 0)
+ * Note: Lower t(x) means higher novelty.
+ */
+export function getNoveltySlope(date: Date): "increasing" | "decreasing" {
+  const x = dateToX(date);
+  const v1 = t(x);
+  const v2 = t(x - 0.1); // Small step forward in time
+
+  // If t(x) is decreasing, novelty is increasing
+  return v2 < v1 ? "increasing" : "decreasing";
+}

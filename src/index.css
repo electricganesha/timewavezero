@@ -399,24 +399,43 @@ a:hover {
   color: var(--accent-blue);
 }
 
-@keyframes fadeIn {
+@keyframes tabFadeIn {
   from {
     opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse-glow {
+  0% {
+    box-shadow: 0 0 5px rgba(255, 0, 242, 0.4);
+    opacity: 0.8;
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(255, 0, 242, 0.8);
+    opacity: 1;
+  }
+  100% {
+    box-shadow: 0 0 5px rgba(255, 0, 242, 0.4);
+    opacity: 0.8;
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
 }
 
 .btn-learn {
@@ -572,5 +591,131 @@ a:hover {
   .modal-body {
     padding-left: 20px;
     padding-right: 20px;
+  }
+}
+
+/* Archaeologist Panel */
+.archaeologist-panel {
+  position: fixed;
+  top: 0;
+  right: -400px;
+  width: 400px;
+  height: 100vh;
+  background: var(--modal-bg);
+  border-left: 1px solid var(--glass-border);
+  z-index: 1100;
+  transition: right 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+  display: flex;
+  flex-direction: column;
+  box-shadow: -20px 0 50px rgba(0, 0, 0, 0.3);
+}
+
+.archaeologist-panel.open {
+  right: 0;
+}
+
+.panel-header {
+  padding: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.panel-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.report-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.synthesis-text {
+  font-family: "Inter", sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--text-color);
+  opacity: 0.9;
+}
+
+.synthesis-text p {
+  margin-bottom: 16px;
+}
+
+.synthesis-text strong {
+  color: var(--accent-magenta);
+}
+
+.close-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.close-btn:hover {
+  color: var(--accent-magenta);
+}
+
+.panel-footer {
+  margin-top: auto;
+  padding: 16px;
+  font-style: italic;
+  border: 1px dashed var(--glass-border);
+}
+
+/* Rhyme Button */
+.btn-rhyme {
+  background: linear-gradient(135deg, var(--accent-magenta), var(--accent-blue));
+  border: none;
+  color: white;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 10px 20px;
+  border-radius: 12px;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(255, 0, 242, 0.3);
+}
+
+.btn-rhyme:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(255, 0, 242, 0.5);
+  filter: brightness(1.1);
+}
+
+.btn-rhyme:disabled {
+  opacity: 0.8;
+  cursor: not-allowed;
+  transform: none;
+  background: linear-gradient(135deg, #444, #222);
+  animation: pulse-glow 2s infinite ease-in-out;
+}
+
+@media (max-width: 900px) {
+  .archaeologist-panel {
+    width: 100%;
+    right: -100%;
   }
 }

@@ -3,8 +3,9 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { Line, Stars, OrbitControls } from "@react-three/drei";
 import { EffectComposer, Bloom, Noise, ChromaticAberration } from "@react-three/postprocessing";
 import * as THREE from "three";
-import { t as t_novelty, ZERO_DATE } from "../engine/timewaveEngine";
+import { t as t_novelty, ZERO_DATE, dateToX, getFractalResonance } from "../engine/timewaveEngine";
 import { MAJOR_EVENTS } from "../engine/timewaveConstants";
+import type { ArchaeologistReport as ReportType } from "../services/aiArchaeologist";
 
 const formatDate = (timeMs: number): string => {
   const d = new Date(timeMs);
@@ -22,17 +23,28 @@ interface NoveltyChart3DProps {
   endTime: number;
   theme: "dark" | "light";
   onHoverValue?: (val: number | null) => void;
+  isArchaeologistActive?: boolean;
+  archaeologistReport?: ReportType | null;
+  archaeologistDate?: Date;
 }
 
-interface LogarithmicVortexProps extends NoveltyChart3DProps {
+interface LogarithmicVortexProps {
+  startTime: number;
+  endTime: number;
+  theme: "dark" | "light";
+  onHoverValue?: (val: number | null) => void;
+  isArchaeologistActive?: boolean;
+  archaeologistReport?: ReportType | null;
+  archaeologistDate?: Date;
   setTargetT: (val: number | null) => void;
   scrollOffset: number;
   activeIndex: number;
+  effectiveStartTime: number;
 }
 
 interface NoveltyParticlesProps {
   count: number;
-  startTime: number;
+  effectiveStartTime: number;
   WINDS: number;
   localMaxNovelty: number;
   scrollOffset: number;
@@ -40,14 +52,14 @@ interface NoveltyParticlesProps {
 }
 
 // Particle system following the vortex path
-const NoveltyParticles: React.FC<NoveltyParticlesProps> = ({ count, startTime, WINDS, localMaxNovelty, scrollOffset, theme }) => {
+const NoveltyParticles: React.FC<NoveltyParticlesProps> = ({ count, effectiveStartTime, WINDS, localMaxNovelty, scrollOffset, theme }) => {
   const mesh = useRef<THREE.InstancedMesh>(null);
   const lastOffset = useRef(scrollOffset);
   const flowIntensity = useRef(0);
   
   const [particles] = useState(() => {
     const temp = [];
-    const maxDays = Math.max(0.1, Math.abs(ZERO_DATE.getTime() - startTime) / 86400000);
+    const maxDays = Math.max(0.1, Math.abs(ZERO_DATE.getTime() - effectiveStartTime) / 86400000);
     const minDays = 0.0001;
     
     for (let i = 0; i < count; i++) {
@@ -83,7 +95,7 @@ const NoveltyParticles: React.FC<NoveltyParticlesProps> = ({ count, startTime, W
         p.t += p.speed * delta * 15 * Math.min(10, flowIntensity.current);
         if (p.t > 1) p.t = 0;
         
-        const maxDays = Math.max(0.1, Math.abs(ZERO_DATE.getTime() - startTime) / 86400000);
+        const maxDays = Math.max(0.1, Math.abs(ZERO_DATE.getTime() - effectiveStartTime) / 86400000);
         const minDays = 0.0001;
         const days = minDays * Math.pow(maxDays / minDays, p.t);
         
@@ -121,16 +133,74 @@ const NoveltyParticles: React.FC<NoveltyParticlesProps> = ({ count, startTime, W
   );
 };
 
-const LogarithmicVortex: React.FC<LogarithmicVortexProps> = ({ startTime, endTime, theme, setTargetT, scrollOffset, activeIndex, onHoverValue }) => {
+// The glowing bridge between the current time and its fractal echo
+const BifrostBridge: React.FC<{ 
+  start: THREE.Vector3; 
+  end: THREE.Vector3; 
+  color?: string;
+  theme: "dark" | "light";
+}> = ({ start, end, color, theme }) => {
+  const curve = useMemo(() => {
+    const mid = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
+    // Lift the midpoint to create an arc
+    mid.y += start.distanceTo(end) * 0.4;
+    return new THREE.QuadraticBezierCurve3(start, mid, end);
+  }, [start, end]);
+
+  const points = useMemo(() => curve.getPoints(50), [curve]);
+  
+  const defaultColor = theme === "dark" ? "#ff00f2" : "#bf00b0";
+
+  return (
+    <group>
+      <Line
+        points={points}
+        color={color || defaultColor}
+        lineWidth={3}
+        transparent
+        opacity={0.8}
+      />
+      {/* Glow particles along the bridge could be added here */}
+      <mesh position={start}>
+        <sphereGeometry args={[0.5, 16, 16]} />
+        <meshBasicMaterial color="#00f2ff" />
+      </mesh>
+      <mesh position={end}>
+        <sphereGeometry args={[0.5, 16, 16]} />
+        <meshBasicMaterial color="#ff00f2" />
+      </mesh>
+    </group>
+  );
+};
+
+const LogarithmicVortex: React.FC<LogarithmicVortexProps> = ({ 
+  endTime, 
+  theme, 
+  setTargetT, 
+  scrollOffset, 
+  activeIndex, 
+  onHoverValue,
+  isArchaeologistActive,
+  archaeologistReport,
+  archaeologistDate,
+  effectiveStartTime
+}) => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const orbitRef = React.useRef<any>(null);
+  const hasReachedHeroShot = React.useRef(false);
+
+  React.useEffect(() => {
+    if (!isArchaeologistActive) {
+      hasReachedHeroShot.current = false;
+    }
+  }, [isArchaeologistActive]);
   
   // Vortex parameters
   const Z_LENGTH = 300; 
   
   // Calculate shared vortex parameters (winds, local peak novelty)
   const { WINDS, localMaxNovelty } = useMemo(() => {
-    const daysSpan = Math.max(0.1, Math.abs(endTime - startTime) / 86400000);
+    const daysSpan = Math.max(0.1, Math.abs(endTime - effectiveStartTime) / 86400000);
     const exp = Math.max(1, Math.round(Math.log(daysSpan / 6) / Math.log(64)));
     
     // Dynamic winds: more loops for larger time spans
@@ -139,7 +209,7 @@ const LogarithmicVortex: React.FC<LogarithmicVortexProps> = ({ startTime, endTim
     // Sample novelty to find local peak for normalization
     let localMax = 0.0001;
     const steps = 200; // Efficient sampling for max
-    const maxDays = Math.max(0.1, Math.abs(ZERO_DATE.getTime() - startTime) / 86400000);
+    const maxDays = Math.max(0.1, Math.abs(ZERO_DATE.getTime() - effectiveStartTime) / 86400000);
     const minDays = 0.0001;
 
     for (let i = 0; i < steps; i++) {
@@ -150,22 +220,88 @@ const LogarithmicVortex: React.FC<LogarithmicVortexProps> = ({ startTime, endTim
     }
 
     return { WINDS: winds, localMaxNovelty: localMax };
-  }, [startTime, endTime]);
+  }, [effectiveStartTime, endTime]);
 
   // Helper to convert time remaining to "log progress" (0 to 1)
   const getLogProgress = React.useCallback((timeAtPoint: number) => {
     const daysRemaining = Math.max(0.0001, Math.abs(ZERO_DATE.getTime() - timeAtPoint) / 86400000);
-    const maxDaysInDataset = Math.max(0.0001, Math.abs(ZERO_DATE.getTime() - startTime) / 86400000);
+    const maxDaysInDataset = Math.max(0.0001, Math.abs(ZERO_DATE.getTime() - effectiveStartTime) / 86400000);
     const minDays = 0.0001;
     return 1 - (Math.log(daysRemaining / minDays) / Math.log(maxDaysInDataset / minDays));
-  }, [startTime]);
+  }, [effectiveStartTime]);
+
+  // Helper to get position for a specific date
+  const getPositionForDate = React.useCallback((date: Date) => {
+    const x = Math.abs(dateToX(date)); // Use Math.abs for novelty lookup to support reflected dates
+    const ms = ZERO_DATE.getTime() - (dateToX(date) * 86400000);
+    const logP = getLogProgress(ms);
+    
+    const z = -Z_LENGTH * (1 - logP);
+    const angle = logP * Math.PI * 2 * WINDS;
+    
+    const baseRadius = 50 * (1 - logP);
+    const val = t_novelty(x); 
+    const normalizedNovelty = val / localMaxNovelty;
+    const wiggleIntensity = 0.3 + logP * 0.4;
+    const fractalWiggle = normalizedNovelty * (baseRadius * wiggleIntensity + 0.5);
+    const radius = Math.max(0.1, baseRadius + fractalWiggle);
+    
+    return new THREE.Vector3(
+      Math.cos(angle) * radius,
+      Math.sin(angle) * radius,
+      z
+    );
+  }, [getLogProgress, WINDS, localMaxNovelty]);
+
+  // Generate markers position using the same log logic AND same wiggle logic
+  const markers = useMemo(() => {
+    return MAJOR_EVENTS.filter(ev => ev.time >= effectiveStartTime && ev.time <= endTime)
+      .sort((a, b) => a.time - b.time)
+      .map((ev, index) => {
+         const logP = getLogProgress(ev.time);
+         
+         const z = -Z_LENGTH * (1 - logP);
+         const angle = logP * Math.PI * 2 * WINDS;
+         
+         const baseRadius = 50 * (1 - logP);
+         
+         // Use the date (in days before singularity) for novelty lookup
+         const daysRemaining = Math.max(0.0001, Math.abs(ZERO_DATE.getTime() - ev.time) / 86400000);
+         const val = t_novelty(daysRemaining); 
+         
+         // Use exactly the same scale-aware logic as the line points
+         const normalizedNovelty = val / localMaxNovelty;
+         const wiggleIntensity = 0.3 + logP * 0.4;
+         const fractalWiggle = normalizedNovelty * (baseRadius * wiggleIntensity + 0.5);
+         const radius = Math.max(0.1, baseRadius + fractalWiggle);
+         
+         const px = Math.cos(angle) * radius;
+         const py = Math.sin(angle) * radius;
+         
+         return { ...ev, pos: new THREE.Vector3(px, py, z), logP, markerIndex: index };
+      });
+  }, [effectiveStartTime, endTime, getLogProgress, WINDS, localMaxNovelty]);
+
+  const bridgePaths = useMemo(() => {
+    if (!isArchaeologistActive || !archaeologistReport || !archaeologistDate) return [];
+    
+    // Calculate position for the primary date
+    const startPos = getPositionForDate(archaeologistDate);
+
+    // Calculate positions for all resonance echoes
+    return archaeologistReport.echoDates.map((_dateStr, i) => {
+      const echoDate = getFractalResonance(archaeologistDate, i + 1);
+      const endPos = getPositionForDate(echoDate);
+      return { start: startPos, end: endPos };
+    });
+  }, [isArchaeologistActive, archaeologistReport, archaeologistDate, getPositionForDate]);
 
   // Calculate vertices and colors using logarithmic time sampling and novelty amplification
   const { points, colors: vertexColors } = useMemo(() => {
     const steps = 4000;
     const rawData = [];
     const minDays = 0.0001;
-    const maxDays = Math.max(0.1, Math.abs(ZERO_DATE.getTime() - startTime) / 86400000);
+    const maxDays = Math.max(0.1, Math.abs(ZERO_DATE.getTime() - effectiveStartTime) / 86400000);
 
     for (let i = 0; i < steps; i++) {
         const t = i / (steps - 1);
@@ -176,11 +312,11 @@ const LogarithmicVortex: React.FC<LogarithmicVortexProps> = ({ startTime, endTim
         const timeAtPointFuture = ZERO_DATE.getTime() + (daysAtPoint * 86400000);
         
         let timeAtPoint = timeAtPointPast;
-        if (timeAtPoint < startTime || timeAtPoint > endTime) {
+        if (timeAtPoint < effectiveStartTime || timeAtPoint > endTime) {
            timeAtPoint = timeAtPointFuture;
         }
 
-        if (timeAtPoint < startTime || timeAtPoint > endTime) continue;
+        if (timeAtPoint < effectiveStartTime || timeAtPoint > endTime) continue;
 
         const novelty = t_novelty(daysAtPoint);
         rawData.push({ timeAtPoint, daysAtPoint, novelty });
@@ -226,38 +362,40 @@ const LogarithmicVortex: React.FC<LogarithmicVortexProps> = ({ startTime, endTim
     }
     
     return { points: pts, colors: clrs };
-  }, [startTime, endTime, getLogProgress, theme, WINDS, localMaxNovelty]);
+  }, [effectiveStartTime, endTime, getLogProgress, theme, WINDS, localMaxNovelty]);
 
-  // Generate markers position using the same log logic AND same wiggle logic
-  const markers = useMemo(() => {
-    return MAJOR_EVENTS.filter(ev => ev.time >= startTime && ev.time <= endTime)
-      .sort((a, b) => a.time - b.time)
-      .map((ev, index) => {
-         const daysRemaining = Math.max(0.0001, Math.abs(ZERO_DATE.getTime() - ev.time) / 86400000);
-         const logP = getLogProgress(ev.time);
-         
-         const z = -Z_LENGTH * (1 - logP);
-         const angle = logP * Math.PI * 2 * WINDS;
-         
-         const baseRadius = 50 * (1 - logP);
-         const val = t_novelty(daysRemaining); 
-         
-         // Use exactly the same scale-aware logic as the line points
-         const normalizedNovelty = val / localMaxNovelty;
-         const wiggleIntensity = 0.3 + logP * 0.4;
-         const fractalWiggle = normalizedNovelty * (baseRadius * wiggleIntensity + 0.5);
-         const radius = Math.max(0.1, baseRadius + fractalWiggle);
-         
-         const px = Math.cos(angle) * radius;
-         const py = Math.sin(angle) * radius;
-         
-         return { ...ev, pos: new THREE.Vector3(px, py, z), logP, markerIndex: index };
-      });
-  }, [startTime, endTime, getLogProgress, WINDS, localMaxNovelty]);
 
   useFrame((state) => {
     if (markers.length === 0) return;
     
+    if (isArchaeologistActive && bridgePaths.length > 0) {
+        if (!hasReachedHeroShot.current) {
+            // Find the "deepest" resonance point to frame the shot
+            const deepestBridge = bridgePaths[bridgePaths.length - 1];
+            const targetCamZ = deepestBridge.end.z - 150; 
+            const targetCamX = 80;
+            const targetCamY = 80;
+            const targetPos = new THREE.Vector3(targetCamX, targetCamY, targetCamZ);
+            
+            if (state.camera.position.distanceTo(targetPos) > 1) {
+              state.camera.position.lerp(targetPos, 0.05);
+              if (orbitRef.current) {
+                  const midZ = (bridgePaths[0].start.z + deepestBridge.end.z) / 2;
+                  orbitRef.current.target.lerp(new THREE.Vector3(0, 0, midZ), 0.05);
+              }
+            } else {
+              hasReachedHeroShot.current = true;
+            }
+        }
+        
+        // Even if reached, we still need to emit novelty for audio
+        if (onHoverValue && archaeologistDate) {
+            const currentNovelty = t_novelty(dateToX(archaeologistDate));
+            onHoverValue(currentNovelty);
+        }
+        return;
+    }
+
     if (markers.length === 1) {
        // Single marker logic: just approach its Z position
        if (orbitRef.current) {
@@ -267,8 +405,8 @@ const LogarithmicVortex: React.FC<LogarithmicVortexProps> = ({ startTime, endTim
          const deltaZ = nextTargetZ - currentTargetZ;
          orbitRef.current.target.z += deltaZ;
          state.camera.position.z += deltaZ;
-       }
-       return;
+        }
+        return;
     }
 
     // Smoothly traverse the markers based on scrollOffset
@@ -295,11 +433,24 @@ const LogarithmicVortex: React.FC<LogarithmicVortexProps> = ({ startTime, endTim
       
       orbitRef.current.target.z += deltaZ;
       state.camera.position.z += deltaZ;
+
+      // Reset X/Y and restore standard zoom distance if we just came from archaeologist mode
+      if (!isArchaeologistActive) {
+        const standardDist = 80; // Reasonable default
+        const currentRelZ = state.camera.position.z - orbitRef.current.target.z;
+        const targetRelZ = currentRelZ > 0 ? standardDist : -standardDist;
+
+        // Only adjust relZ if it's significantly different (was stretched by deep resonance)
+        if (Math.abs(Math.abs(currentRelZ) - standardDist) > 5) {
+            const nextRelZ = THREE.MathUtils.lerp(currentRelZ, targetRelZ, 0.05);
+            state.camera.position.z = orbitRef.current.target.z + nextRelZ;
+        }
+      }
     }
 
     // Emit the current novelty at this travel position to drive the audio
     const currentLogP = THREE.MathUtils.lerp(m1.logP, m2.logP, fraction);
-    const maxDays = Math.max(0.1, Math.abs(ZERO_DATE.getTime() - startTime) / 86400000);
+    const maxDays = Math.max(0.1, Math.abs(ZERO_DATE.getTime() - effectiveStartTime) / 86400000);
     const minDays = 0.0001;
     // inverse of: logP = 1 - (Math.log(days / minDays) / Math.log(maxDays / minDays))
     // Math.log(days / minDays) = (1 - logP) * Math.log(maxDays / minDays)
@@ -316,7 +467,7 @@ const LogarithmicVortex: React.FC<LogarithmicVortexProps> = ({ startTime, endTim
     <group>
       <NoveltyParticles 
         count={500} 
-        startTime={startTime} 
+        effectiveStartTime={effectiveStartTime}
         WINDS={WINDS} 
         localMaxNovelty={localMaxNovelty} 
         scrollOffset={scrollOffset}
@@ -367,8 +518,17 @@ const LogarithmicVortex: React.FC<LogarithmicVortexProps> = ({ startTime, endTim
         enablePan={true}
         enableZoom={false}
         enableRotate={true}
-        target={[0, 0, -300]}
       />
+
+      {isArchaeologistActive && bridgePaths.map((path, i) => (
+        <BifrostBridge 
+          key={i}
+          start={path.start} 
+          end={path.end} 
+          theme={theme}
+          color={i === 0 ? "#00f2ff" : i === 1 ? "#ff00f2" : "#7000ff"}
+        />
+      ))}
     </group>
   );
 };
@@ -462,9 +622,31 @@ const VortexOverlay: React.FC<VortexOverlayProps> = ({ offset, markers, theme, a
   );
 };
 
-export const NoveltyChart3D: React.FC<NoveltyChart3DProps> = ({ startTime, endTime, theme, onHoverValue }) => {
+export const NoveltyChart3D: React.FC<NoveltyChart3DProps> = ({ 
+  startTime, 
+  endTime, 
+  theme, 
+  onHoverValue,
+  isArchaeologistActive,
+  archaeologistReport,
+  archaeologistDate
+}) => {
   const [targetIndex, setTargetIndex] = useState(0);
   const [scrollOffset, setScrollOffset] = useState(0);
+
+  // calculate "effective range" (ancestor to singularity) if archaeologist is active
+  const effectiveStartTime = useMemo(() => {
+    if (!isArchaeologistActive || !archaeologistDate) return startTime;
+    
+    // Calculate echoMs carefully
+    const x = Math.abs(dateToX(archaeologistDate));
+    const echoX = x + 384 * 64; 
+    const echoMs = ZERO_DATE.getTime() - echoX * 86400000;
+    
+    // The range must reach at least the echo date
+    return Math.min(startTime, echoMs);
+  }, [startTime, isArchaeologistActive, archaeologistDate]);
+
   const scrollTargetRef = useRef<HTMLDivElement>(null);
   const lastWheelTime = useRef(0);
   
@@ -476,19 +658,19 @@ export const NoveltyChart3D: React.FC<NoveltyChart3DProps> = ({ startTime, endTi
   }, [onHoverValue]);
 
   const { markersForOverlay, exponent } = useMemo(() => {
-    const daysSpan = Math.max(0.1, Math.abs(endTime - startTime) / 86400000);
+    const daysSpan = Math.max(0.1, Math.abs(endTime - effectiveStartTime) / 86400000);
     const exp = Math.max(1, Math.round(Math.log(daysSpan / 6) / Math.log(64)));
 
-    const ms = MAJOR_EVENTS.filter(ev => ev.time >= startTime && ev.time <= endTime)
+    const ms = MAJOR_EVENTS.filter(ev => ev.time >= effectiveStartTime && ev.time <= endTime)
       .sort((a, b) => a.time - b.time)
       .map((ev, index) => {
         const daysRemaining = Math.max(0.0001, Math.abs(ZERO_DATE.getTime() - ev.time) / 86400000);
-        const maxDaysInDataset = Math.max(0.0001, Math.abs(ZERO_DATE.getTime() - startTime) / 86400000);
+        const maxDaysInDataset = Math.max(0.0001, Math.abs(ZERO_DATE.getTime() - effectiveStartTime) / 86400000);
         const logP = 1 - (Math.log(daysRemaining / 0.0001) / Math.log(maxDaysInDataset / 0.0001));
         return { ...ev, markerIndex: index, logP };
       });
     return { markersForOverlay: ms, exponent: exp };
-  }, [startTime, endTime]);
+  }, [effectiveStartTime, endTime]);
 
   useEffect(() => {
     const el = scrollTargetRef.current;
@@ -563,6 +745,10 @@ export const NoveltyChart3D: React.FC<NoveltyChart3DProps> = ({ startTime, endTi
           scrollOffset={scrollOffset}
           activeIndex={targetIndex}
           onHoverValue={onHoverValue}
+          isArchaeologistActive={isArchaeologistActive}
+          archaeologistReport={archaeologistReport}
+          archaeologistDate={archaeologistDate}
+          effectiveStartTime={effectiveStartTime}
         />
 
         <EffectComposer>

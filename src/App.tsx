@@ -1,7 +1,12 @@
 import { useState, useEffect, memo } from "react";
 import { NoveltyChart } from "./components/NoveltyChart";
 import { NoveltyChart3D } from "./components/NoveltyChart3D";
-import { getNoveltyAtDate, ZERO_DATE } from "./engine/timewaveEngine";
+import {
+  getNoveltyAtDate,
+  ZERO_DATE,
+  getFractalResonance,
+  getNoveltySlope,
+} from "./engine/timewaveEngine";
 import {
   Clock,
   Info,
@@ -13,9 +18,16 @@ import {
   Layers,
   Volume2,
   VolumeX,
+  Sparkles,
+  Loader2,
 } from "lucide-react";
 import { AboutModal } from "./components/AboutModal";
+import { ArchaeologistReport } from "./components/ArchaeologistReport";
 import { useNoveltyAudio } from "./hooks/useNoveltyAudio";
+import {
+  fetchHistoricalRhyme,
+  type ArchaeologistReport as ReportType,
+} from "./services/aiArchaeologist";
 
 const PRESETS = [
   { label: "Big Bang (22B Years)", days: 22e9 * 365.25, endOffset: -365 * 14 },
@@ -50,6 +62,13 @@ const getPresetRange = (preset: (typeof PRESETS)[0]) => {
   };
 };
 
+const getRandomHistoricalDate = () => {
+  const start = new Date(1000, 0, 1).getTime();
+  const end = ZERO_DATE.getTime();
+  const randomTime = start + Math.random() * (end - start);
+  return new Date(randomTime);
+};
+
 function App() {
   const [currentPreset, setCurrentPreset] = useState<
     (typeof PRESETS)[0] | "custom"
@@ -66,6 +85,17 @@ function App() {
     return (localStorage.getItem("theme") as "dark" | "light") || "dark";
   });
   const [viewMode, setViewMode] = useState<"2D" | "3D">("2D");
+
+  // AI Archaeologist State
+  const [archaeologistReport, setArchaeologistReport] =
+    useState<ReportType | null>(null);
+  const [isArchaeologistOpen, setIsArchaeologistOpen] = useState(false);
+  const [isAILoading, setIsAILoading] = useState(false);
+  const [archaeologistDate, setArchaeologistDate] = useState<Date>(
+    getRandomHistoricalDate(),
+  );
+  const [resonanceDepth, setResonanceDepth] = useState(1);
+  const [archaeologistEchoes, setArchaeologistEchoes] = useState<Date[]>([]);
 
   const currentNovelty = getNoveltyAtDate(now);
 
@@ -102,6 +132,46 @@ function App() {
     const timer = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  const handleRhyme = async () => {
+    setIsAILoading(true);
+    try {
+      const echoDates: Date[] = [];
+      for (let i = 1; i <= resonanceDepth; i++) {
+        echoDates.push(getFractalResonance(archaeologistDate, i));
+      }
+
+      const slope = getNoveltySlope(archaeologistDate);
+
+      // Find the best existing preset that fits the span
+      const allDates = [archaeologistDate, ...echoDates];
+      const minMs = Math.min(...allDates.map((d) => d.getTime()));
+      const maxMs = Math.max(...allDates.map((d) => d.getTime()));
+      const spanDays = (maxMs - minMs) / (1000 * 60 * 60 * 24);
+
+      // Find first preset with 'days' >= spanDays
+      const bestPreset =
+        PRESETS.slice()
+          .reverse()
+          .find((p) => p.days >= spanDays) || PRESETS[0];
+
+      setCurrentPreset(bestPreset);
+      setCustomRange(getPresetRange(bestPreset));
+
+      const report = await fetchHistoricalRhyme(
+        archaeologistDate,
+        echoDates,
+        slope,
+      );
+      setArchaeologistEchoes(echoDates);
+      setArchaeologistReport(report);
+      setIsArchaeologistOpen(true);
+    } catch (error) {
+      console.error("Rhyme error:", error);
+    } finally {
+      setIsAILoading(false);
+    }
+  };
 
   return (
     <div className="app-container">
@@ -259,6 +329,86 @@ function App() {
             </p>
           </div>
 
+          <div className="glass">
+            <h3
+              className="text-xs uppercase tracking-widest text-muted"
+              style={{
+                marginBottom: "16px",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+              }}
+            >
+              <Sparkles size={12} className="accent-magenta" /> AI Archaeologist
+            </h3>
+            <div className="date-field" style={{ marginBottom: "12px" }}>
+              <label className="date-label">Target Date</label>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <input
+                  type="date"
+                  className="date-input"
+                  value={toISO(archaeologistDate.getTime())}
+                  max="2012-12-21"
+                  onChange={(e) => {
+                    const d = new Date(e.target.value);
+                    if (!isNaN(d.getTime())) setArchaeologistDate(d);
+                  }}
+                />
+                <button
+                  className="theme-toggle"
+                  onClick={() =>
+                    setArchaeologistDate(getRandomHistoricalDate())
+                  }
+                  style={{ width: "40px", height: "35px", borderRadius: "8px" }}
+                  title="Random historical date"
+                >
+                  <Sparkles size={16} />
+                </button>
+              </div>
+            </div>
+
+            <div className="date-field" style={{ marginBottom: "16px" }}>
+              <label className="date-label">
+                Resonance Depth: {resonanceDepth}
+              </label>
+              <input
+                type="range"
+                min="1"
+                max="3"
+                step="1"
+                value={resonanceDepth}
+                onChange={(e) => setResonanceDepth(parseInt(e.target.value))}
+                style={{ width: "100%", accentColor: "var(--accent-magenta)" }}
+              />
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span className="text-[8px] text-very-muted">67Y</span>
+                <span className="text-[8px] text-very-muted">4.3KY</span>
+                <span className="text-[8px] text-very-muted">275KY</span>
+              </div>
+            </div>
+
+            <button
+              className="btn-rhyme"
+              onClick={handleRhyme}
+              disabled={isAILoading}
+              style={{ width: "100%" }}
+            >
+              {isAILoading ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <Sparkles size={16} />
+              )}
+              {isAILoading ? "RESONATING..." : "FIND RHYME(s)"}
+            </button>
+            <p
+              className="text-[9px] text-very-muted"
+              style={{ marginTop: "12px", lineHeight: "1.4" }}
+            >
+              Calculates fractal resonance with historical cycles to identify
+              recurring archetypes.
+            </p>
+          </div>
+
           <div
             className="glass"
             style={{ marginTop: "auto", opacity: 0.6, padding: "16px" }}
@@ -285,7 +435,11 @@ function App() {
                 startTime={startTimeMs}
                 endTime={endTimeMs}
                 onHoverValue={setHoveredNovelty}
+                onClickDate={setArchaeologistDate}
                 theme={theme}
+                isArchaeologistActive={isArchaeologistOpen}
+                archaeologistDate={archaeologistDate}
+                echoDates={archaeologistEchoes}
               />
             ) : (
               <NoveltyChart3D
@@ -298,6 +452,9 @@ function App() {
                 endTime={endTimeMs}
                 theme={theme}
                 onHoverValue={setHoveredNovelty}
+                isArchaeologistActive={isArchaeologistOpen}
+                archaeologistReport={archaeologistReport}
+                archaeologistDate={archaeologistDate}
               />
             )}
           </div>
@@ -365,6 +522,12 @@ function App() {
           </div>
         </section>
       </main>
+
+      <ArchaeologistReport
+        report={archaeologistReport}
+        isOpen={isArchaeologistOpen}
+        onClose={() => setIsArchaeologistOpen(false)}
+      />
     </div>
   );
 }

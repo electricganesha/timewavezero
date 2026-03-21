@@ -1,74 +1,96 @@
-# React + TypeScript + Vite
+# Timewave Zero | Fractal Novelty Visualizer
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+[![Vercel Deployment](https://img.shields.io/badge/Deployment-Live-brightgreen)](https://time-wave-zero.vercel.app)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Currently, two official plugins are available:
+A modern, immersive implementation of Terence McKenna's **Novelty Theory**. This project visualizes history not as a linear progression, but as a fractal wave of "Novelty" and "Habit," mapping the increase of complexity across cosmic, historical, and biological scales.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Try the live experience [here](https://time-wave-zero.vercel.app)!
 
-## React Compiler
+---
 
-The React Compiler is currently not compatible with SWC. See [this issue](https://github.com/vitejs/vite-plugin-react/issues/428) for tracking the progress.
+## 🌌 Core Features
 
-## Expanding the ESLint configuration
+### 1. Dual-State Visualization
+- **3D Logarithmic Vortex**: An immersive Three.js environment where history is a golden spiral. Experience the "Concrescence" as you navigate through the "tightening gyre" of time.
+- **2D Cartesian Plot**: A precise mathematical view of the novelty wave, optimized with high-performance Canvas rendering for deep historical analysis.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### 2. Deep Fractal Exploration
+- **Fractal Time Scaling**: Navigate the "Concrescence" across **powers of 64** (e.g., 67.5 days, 11.8 years, 758 years, up to 22 billion years).
+- **Historical "Rhymes"**: Discover **Fractal Resonance**—points in the deep past that share the same mathematical signature as the present, connected by glowing **Bifrost Bridges**.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### 3. Steward of the Noosphere (AI Archaeologist)
+- Consult an AI synthesis engine to interpret archetypal patterns of novelty and habit. The Steward analyzes cross-era data to reveal persistent signatures across the fractal wave.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+### 4. Sensory Immersion
+- **Real-time Sonification**: Listen to the frequency of creativity. Novelty values are translated into a procedural audio soundscape using the Web Audio API.
+- **Dynamic Physics & Bloom**: A lush visual environment with theme-aware palettes for Light and Dark modes.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+---
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 📜 Philosophical Framework
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Novelty vs. Habit
+Conceived by ethnobotanist **Terence McKenna**, Novelty Theory suggests the universe is driven by two competing forces: **Habit** (entropy and repetition) and **Novelty** (complexity and connectivity). As time progresses, novelty increases exponentially toward a point of infinite density.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
-# timewavezero
+### Process Philosophy
+Influenced by **Alfred North Whitehead**, this model views the universe as a series of interconnected **events** rather than static objects. History is seen as a "concrescence"—a drawing together of all information toward a final nexus.
+
+### The 2012 Convergence
+The original Timewave Zero formula famously converges to a point of maximum novelty—the "Teleological Attractor"—on **December 21, 2012**. While this date passed without a literal apocalypse, the theory remains a profound exploration of time as a recursive, structured process.
+
+---
+
+## 🔢 The Mathematics of Time
+
+The mathematical core of the wave is derived from the **King Wen sequence** of the *I Ching*. 
+
+1. **384-Point Data Set**: By analyzing transitions in the 64 hexagrams, McKenna identified a binary pattern mapped into 384 data points (64 hexagrams × 6 lines).
+2. **Fractal Summation**: The wave is generated by summing these data points at scales that are powers of 64.
+3. **The Singularity**: Because the wave is a fractal summation of finite parts, it reaches a point of absolute zero—a singularity where novelty becomes a total state rather than an oscillation.
+
+> [!NOTE]
+> For a deep dive into the math, read the technical paper: [The Mathematics of Timewave Zero](https://pdfhost.io/v/8ji5Spc8e_The_Mathematics_of_Timewave_Zero)
+
+---
+
+## 🛠️ Tech Stack
+
+- **Frontend**: React 18 + TypeScript + Vite
+- **3D Graphics**: Three.js (React Three Fiber + Drei)
+- **Post-processing**: Bloom, Chromatic Aberration, Noise via `@react-three/postprocessing`
+- **Audio Engine**: Custom procedural synthesis via Web Audio API
+- **Animations**: Framer Motion
+- **Icons**: Lucide React
+- **Styling**: Vanilla CSS with a custom Glassmorphism system
+
+---
+
+## 🚀 Getting Started
+
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/electricganesha/timewavezero.git
+   ```
+2. **Install dependencies**:
+   ```bash
+   npm install
+   ```
+3. **Environment Setup**:
+   Create a `.env` file for AI features if required.
+4. **Development**:
+   ```bash
+   npm run dev
+   ```
+
+---
+
+## 🏗️ Origins & Credits
+
+Developed in the late 1980s by **Terence McKenna** and formalized by computer programmer **Peter Meyer**. This modern rewrite is a non-commercial tribute created by **Christian Marques**.
+
+Special thanks to **Peter Meyer** for his original software development and mathematical refinement. Explore his work at [fractal-timewave.com](https://www.fractal-timewave.com/).
+
+---
+
+*Created for the explorers of the unseen. "The world which we perceive is a tiny fraction of the world which we can perceive." — Terence McKenna*
