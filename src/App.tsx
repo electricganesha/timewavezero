@@ -1,6 +1,6 @@
 import { useState, useEffect, memo } from "react";
-import { NoveltyChart } from "./components/NoveltyChart";
-import { NoveltyChart3D } from "./components/NoveltyChart3D";
+import { NoveltyChart } from "./components/Charts/2D/NoveltyChart";
+import { NoveltyChart3D } from "./components/Charts/3D/NoveltyChart3D";
 import {
   getNoveltyAtDate,
   ZERO_DATE,
